@@ -1,0 +1,33 @@
+---
+name: people
+url: /people/:id?p=
+controller: PeopleCtrl
+---
+<div class="grid-content person" class="person" ng-show="person">
+	<h1>{{person.name | capitalize}}</h1>
+	<!-- <img ng-show="imageUrl != 'Unknown'" src="{{imageUrl}}" alt=""> -->
+	<hr>
+	<dl>
+		<dt>Films</dt>
+		<dd ng-repeat="film in person.films" ui-sref="films({ id:(film | lastdir), p:''})">
+			<span get-prop prop="'title'" url="film">{{film}}</span>
+			<span get-prop prop="'release_date'" class="films" url="film">{{film}}</span>
+		</dd>
+	</dl>
+</div>
+
+
+<div class="grid-content people" class="people" ng-show="people">
+	<a class="button pagination" ng-show="prevPage" ui-sref="people({ p: prevPage })">Back to Page {{prevPage}}</a>
+
+	<div class="grid-content shrink">
+			<h1>Hover over the ever expanding space to find casts!</h1>
+		<ul class="menu-bar vertical">
+			<li ng-repeat="person in people.results">
+		        <a ui-sref="people({ id:( person.url | lastdir ), p:'' })">{{person.name | capitalize}}</a>
+		    </li>
+		</ul>
+	</div>
+
+	<a class="button pagination" ng-show="nextPage" ui-sref="people({ p: nextPage })">To Page {{nextPage}}</a>
+</div>

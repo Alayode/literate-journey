@@ -10,100 +10,136 @@
     'foundation.dynamicRouting',
     'foundation.dynamicRouting.animations'
   ])
-.controller('FilmsCtrl',
-  ["$scope", "$state", "$http",function($scope, $state, $http){
-  // Grab URL parameters - this is unique to FFA, not standard for
-  // AngularJS. Ensure $state is included in your dependencies list
-  // in the controller definition above.
+  .controller('FilmsCtrl', function($scope, $state, $http){
+  $scope = genericController($scope, $state, $http, 'films', 'film');
+  })
+  .controller('PeopleCtrl', function($scope, $state, $http){
+    $scope = genericController($scope, $state, $http, 'people', 'person');
+  })
+  .directive("getProp", ['$http', '$filter', function($http, $filter) {
+    return {
+      template: "{{property}}",
+      scope: {
+        prop: "=",
+        url: "="
+      },
+      link: function(scope, element, attrs) {
+        // Use Aerobatic's caching if we're on that server
+        var urlApi = scope.url,
+          queryParams = {
+            cache: true
+          };
+
+        // if (window.location.hostname.match('aerobaticapp')) {
+        //   queryParams = {
+        //     params: {
+        //       url: urlApi,
+        //       cache: 1,
+        //       ttl: 30000 // cache for 500 minutes
+        //     }
+        //   }
+        //   urlApi = '/proxy';
+        // }
+
+        var capitalize = $filter('capitalize');
+        $http.get(urlApi, queryParams).then(function(result) {
+          scope.property = capitalize(result.data[scope.prop]);
+        }, function(err) {
+          scope.property = "Unknown";
+        });
+      }
+    }
+  }])
+.filter('capitalize', function() {
+return function (input) {
+  return (!!input) ? input.replace(/([^\W_]+[^\s-]*) */g,
+    function(txt){return txt.charAt(0).toUpperCase() +
+      txt.substr(1)}) : '';
+}
+})
+.filter('lastdir', function () {
+// Send the results of this manipulating function
+// back to the view.
+return function (input) {
+  // Simple JavaScript to split and slice like a fine chef.
+  return (!!input) ? input.split('/').slice(-2, -1)[0] : '';
+}
+  })
+
+  function genericController($scope, $state, $http, multiple, single){
+  // Grab URL parameters
   $scope.id = ($state.params.id || '');
   $scope.page = ($state.params.p || 1);
 
-  // If we're on the first page or page is set to default
+  // Use Aerobatic's caching if we're on that server
+  var urlApi = "http://swapi.co/api/"+multiple+"/"+$scope.id+"?page="+$scope.page,
+    queryParams = {
+      cache: true
+    };
+
+  if (window.location.hostname.match('aerobaticapp')) {
+    queryParams = {
+      params: {
+        url: urlApi,
+        cache: 1,
+        ttl: 30000 // cache for 500 minutes
+      }
+    }
+    urlApi = '/proxy';
+  }
+
   if ($scope.page == 1) {
     if ($scope.id != '') {
-      // We've got a URL parameter, so let's get the single entity's
-      // data from our data source
-      $http.get("http://swapi.co/api/"+'films'+"/"+$scope.id,
-          {cache: true })
+      // We've got a URL parameter, so let's get the single entity's data
+      $http.get(urlApi, queryParams)
         .success(function(data) {
-          // If the request succeeds, assign our data to the 'film'
-          // variable, passed to our page through $scope
-          $scope['film'] = data;
+          // The HTTP GET only works if it's referencing an ng-repeat'ed array for some reason...
+          if (data.homeworld) data.homeworld = [data.homeworld];
+
+          $scope[single] = data;
+
+          var name = data.name;
+          if (single == 'film') name = data.title;
+          // Get an image from a Google Custom Search (this API key only works on localhost & aerobaticapp.com)
+          // var googleUrl = 'https://www.googleapis.com/customsearch/v1?cx=001000040755652345309%3Aosltt3fexvk&q='+encodeURIComponent(name)+'&imgSize=large&num=1&fileType=jpg&key=AIzaSyBDvUGYCJfOyTNoJzk-5P9vE-dllx-Wne4',
+          //   googleParams = { cache: true };
+
+          if (window.location.hostname.match('aerobaticapp')) {
+            googleParams = {
+              params: {
+                url: googleUrl,
+                cache: 1,
+                ttl: 300000 // cache for 5000 minutes
+              }
+            }
+            googleUrl = '/proxy';
+          }
+
+        //   $http.get(googleUrl, googleParams)
+        //   .then(function(result) {
+        //     $scope.imageUrl = result.data.items[0].pagemap.cse_image[0].src;
+        //   }, function(err) {
+        //     $scope.imageUrl = "Unknown";
+        //   });
         })
 
     } else {
-      // There is no ID, so we'll show a list of all films.
-      // We're on page 1, so the next page is 2.
-      $http.get("http://swapi.co/api/"+'films'+"/", { cache: true })
-        .success(function(data) {
-          $scope['films'] = data;
-          if (data['next']) $scope.nextPage = 2;
-        });
+      // We're on page 1, so thet next page is 2.
+      $http.get(urlApi, queryParams)
+      .success(function(data) {
+        $scope[multiple] = data;
+        if (data['next']) $scope.nextPage = 2;
+      });
     }
   } else {
-    // Once again, there is no ID, so we'll show a list of all films.
-    // If there's a next page, let's add it. Otherwise just add the
-    // previous page button.
-    $http.get("http://swapi.co/api/"+'films'+"/?page="+$scope.page,
-      { cache: true }).success(function(data) {
-        $scope['films'] = data;
-        if (data['next']) $scope.nextPage = 1*$scope.page + 1;
-      });
-      $scope.prevPage = 1*$scope.page - 1;
+    // If there's a next page, let's add it. Otherwise just add the previous page button.
+    $http.get(urlApi, queryParams)
+    .success(function(data) {
+      $scope[multiple] = data;
+      if (data['next']) $scope.nextPage = 1*$scope.page + 1;
+    });
+    $scope.prevPage = 1*$scope.page - 1;
   }
   return $scope;
-}])
-.directive("getProp", ['$http', '$filter', function($http, $filter) {
-  return {
-    template: "{{property}}",
-    scope: {
-      prop: "=",
-      url: "="
-    },
-    link: function(scope, element, attrs) {
-      // Use Aerobatic's caching if we're on that server
-      var urlApi = scope.url,
-        queryParams = {
-          cache: true
-        };
-
-      if (window.location.hostname.match('aerobaticapp')) {
-        queryParams = {
-          params: {
-            url: urlApi,
-            cache: 1,
-            ttl: 30000 // cache for 500 minutes
-          }
-        }
-        urlApi = '/proxy';
-      }
-
-      var capitalize = $filter('capitalize');
-      $http.get(urlApi, queryParams).then(function(result) {
-        scope.property = capitalize(result.data[scope.prop]);
-      }, function(err) {
-        scope.property = "Unknown";
-      });
-    }
-  }
-}])
-.filter('capitalize', function() {
-  // Send the results of this manipulating function
-  // back to the view.
-  return function (input) {
-    // If input exists, replace the first letter of
-    // each word with its capital equivalent.
-    return (!!input) ? input.replace(/([^\W_]+[^\s-]*) */g,
-      function(txt){return txt.charAt(0).toUpperCase() +
-        txt.substr(1)}) : '';
-  }
-})
-.filter('lastdir', function () {
-  // Send the results of this manipulating function
-  // back to the view.
-  return function (input) {
-    // Simple JavaScript to split and slice like a fine chef.
-    return (!!input) ? input.split('/').slice(-2, -1)[0] : '';
-  }
-})
+}
 })();

@@ -1,9 +1,13 @@
 @import "settings";
 @import "foundation";
 
+#mySpace{
+	background-image: url('/Space.png');
+}
 .off-canvas ~ .grid-frame,
 .off-canvas {
 	background: $secondary-color;
+
 }
 
 .menu-group {
