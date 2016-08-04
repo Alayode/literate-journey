@@ -2,7 +2,7 @@
   "name": "foundation-apps-template",
   "version": "1.2.0",
   "scripts": {
-    "start": "gulp",
+    "start": "node server.js",
     "build": "gulp build --production"
   },
   "devDependencies": {

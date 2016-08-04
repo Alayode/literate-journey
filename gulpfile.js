@@ -160,10 +160,10 @@ gulp.task('server', ['build'], function() {
 gulp.task('serveprod', function() {
   connect.server({
     root: 'client',
-    port: 5000
+    port: 5000,
     livereload: false
 });
-
+});
 
 // Builds your entire app once, without starting a server
 gulp.task('build', function(cb) {
