@@ -65,7 +65,25 @@ return function (input) {
   return (!!input) ? input.split('/').slice(-2, -1)[0] : '';
 }
   })
+  .config(config)
+  .run(run);
 
+  config.$inject = ['$urlRouterProvider', '$locationProvider'];
+
+  function config($urlProvider, $locationProvider) {
+  $urlProvider.otherwise('/');
+
+  $locationProvider.html5Mode({
+    enabled:true,
+    requireBase: true
+  });
+
+  $locationProvider.hashPrefix('!');
+  }
+
+  function run() {
+  FastClick.attach(document.body);
+  }
   function genericController($scope, $state, $http, multiple, single){
   // Grab URL parameters
   $scope.id = ($state.params.id || '');
